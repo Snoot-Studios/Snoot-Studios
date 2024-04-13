@@ -3,18 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Image to Monochrome Converter</title>
+<title>Image Viewer</title>
+<style>
+    #imageContainer img {
+        display: block;  /* Keeps the image within the bounds of the div */
+        max-width: 100%; /* Ensures the image is never wider than the div */
+        max-height: 80vh; /* Limits image height to 80% of the viewport height */
+    }
+</style>
 </head>
 <body>
-<h2>Image to Monochrome Converter</h2>
-<button id="downloadBtn">Download as PNG</button>
+<h2>Upload and Resize Image Preview</h2>
+<input type="file" id="imageInput" accept="image/*"><br><br>
+<label for="resizeSlider">Resize Image:</label>
+<input type="range" id="resizeSlider" min="10" max="200" value="100"> 100%<br><br>
+<div id="imageContainer"></div>
 
-<input type="file" id="imageInput" accept="image/*" /><br><br>
-<label for="thresholdSlider">Threshold:</label>
-<input type="range" id="thresholdSlider" min="0" max="255" value="128">
-<span id="thresholdValue">128</span><br><br>
-<canvas id="imageCanvas"></canvas>
-
-<script src="converter.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
