@@ -1,67 +1,137 @@
 document.getElementById('imageInput').addEventListener('change', handleImageUpload);
-document.getElementById('thresholdSlider').addEventListener('input', updateThreshold);
-document.getElementById('thresholdSlider').addEventListener('touchend', updateThreshold);
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('downloadBtn').addEventListener('click', downloadImage);
-});
+document.getElementById('scaleSlider').addEventListener('input', updateScale);
+document.getElementById('thresholdSlider').addEventListener('input', updateThresholdDisplay);
+document.getElementById('applyBtn').addEventListener('click', applyEffects);
+document.getElementById('downloadBtn').addEventListener('click', downloadImage);
 
-let threshold = 128;
 let image = new Image();
+let originalWidth, originalHeight;
 let canvas = document.getElementById('imageCanvas');
 let ctx = canvas.getContext('2d');
+let currentThreshold = 128; // Default threshold
+let currentScale = 100; // Default scale percentage
 
 function handleImageUpload(event) {
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    image.onload = () => {
-      convertToMonochrome();
-      updateCanvasSize();
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        image.onload = () => {
+            originalWidth = image.width;
+            originalHeight = image.height;
+            updateScale();
+        };
+        image.src = e.target.result;
     };
-    image.src = e.target.result;
-  };
-  reader.readAsDataURL(event.target.files[0]);
+    reader.readAsDataURL(file);
 }
 
-function updateThreshold(event) {
-  threshold = event.target.value;
-  document.getElementById('thresholdValue').textContent = threshold;
-  convertToMonochrome();
+function updateScale() {
+    const scale = document.getElementById('scaleSlider').value;
+    document.getElementById('scaleValue').textContent = `${scale}%`;
+    currentScale = scale;
+    applyEffects();
 }
 
-function convertToMonochrome() {
-  if (!image.src) return; // Do nothing if no image has been uploaded
-
-  updateCanvasSize();
-  
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-  
-  for (let i = 0; i < data.length; i += 4) {
-    const grayscale = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
-    const color = grayscale < threshold ? 0 : 255;
-    data[i] = color;
-    data[i + 1] = color;
-    data[i + 2] = color;
-    // Set alpha to 0 for white pixels
-    data[i + 3] = color === 0 ? 255 : 0;
-  }
-  
-  ctx.putImageData(imageData, 0, 0);
+function updateThresholdDisplay() {
+    const threshold = document.getElementById('thresholdSlider').value;
+    document.getElementById('thresholdValue').textContent = threshold;
+    currentThreshold = threshold;
+    applyEffects();
 }
 
-function updateCanvasSize() {
-  canvas.width = image.width;
-  canvas.height = image.height;
-  ctx.drawImage(image, 0, 0);
+function applyEffects() {
+    const effect = document.getElementById('effectSelector').value;
+    if (!image.src) return; // Do nothing if no image has been uploaded
+
+    canvas.width = originalWidth * (currentScale / 100);
+    canvas.height = originalHeight * (currentScale / 100);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    
+    if (effect === 'monochrome') {
+        applyMonochrome();
+    } else if (effect === 'atkinson') {
+        applyAtkinson();
+    }
+}
+
+function applyMonochrome() {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const grayscale = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+        const color = grayscale < currentThreshold ? 0 : 255;
+        data[i] = data[i + 1] = data[i + 2] = color;
+        data[i + 3] = 255; // Full opacity
+    }
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function applyAtkinson() {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const width = imageData.width;
+    for (let i = 0; i < data.length; i += 4) {
+        let oldPixel = 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+        let newPixel = oldPixel < currentThreshold ? 0 : 255;
+        let quantError = (oldPixel - newPixel) / 8;
+
+        data[i] = data[i + 1] = data[i + 2] = newPixel;
+
+        if (i % (4 * width) < 4 * (width - 3)) {
+            // Right pixel
+            data[i + 4 + 0] = clip(data[i + 4 + 0] + quantError);
+            data[i + 4 + 1] = clip(data[i + 4 + 1] + quantError);
+            data[i + 4 + 2] = clip(data[i + 4 + 2] + quantError);
+        }
+
+        let rowPixels = 4 * width;
+        if (i + rowPixels < data.length) {
+            // Down one row
+            data[i + rowPixels + 0] = clip(data[i + rowPixels + 0] + quantError);
+            data[i + rowPixels + 1] = clip(data[i + rowPixels + 1] + quantError);
+            data[i + rowPixels + 2] = clip(data[i + rowPixels + 2] + quantError);
+
+            if (i % (4 * width) > 4) {
+                // Bottom left pixel
+                data[i + rowPixels - 4 + 0] = clip(data[i + rowPixels - 4 + 0] + quantError);
+                data[i + rowPixels - 4 + 1] = clip(data[i + rowPixels - 4 + 1] + quantError);
+                data[i + rowPixels - 4 + 2] = clip(data[i + rowPixels - 4 + 2] + quantError);
+            }
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function clip(value) {
+    return Math.max(0, Math.min(255, value));
 }
 
 function downloadImage() {
-  if (!canvas.toDataURL) return; // Do nothing if the canvas hasn't been drawn to
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
 
-  const link = document.createElement('a');
-  link.download = 'converted-image.png';
-  link.href = canvas.toDataURL('image/png');
-  // Use dispatchEvent for better cross-browser compatibility
-  const event = new MouseEvent('click');
-  link.dispatchEvent(event);
+    // Loop through every pixel to change white pixels to transparent
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        // Assuming the white pixels are pure white, you can adjust the tolerance if needed
+        if (r === 255 && g === 255 && b === 255) {
+            data[i + 3] = 0; // Set alpha to 0 (transparent)
+        }
+    }
+
+    // Put the image data back on the canvas
+    ctx.putImageData(imageData, 0, 0);
+
+    // Convert canvas to data URL and trigger download
+    const link = document.createElement('a');
+    link.download = 'processed-image.png';
+    link.href = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+    link.click();
+
+    // Optionally, clear the modification or redraw the original image if further interactions are expected
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
 }
