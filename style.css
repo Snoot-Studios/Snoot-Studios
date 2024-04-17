@@ -1,0 +1,44 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    text-align: center;
+}
+
+canvas {
+    border: 1px solid #ccc;
+    margin-top: 10px;
+}
+
+#imageInfo {
+    margin-top: 5px;
+}
+
+.colorInput {
+    margin-left: 5px;
+    width: 80px;
+}
+
+#colorHistory {
+    margin-top: 20px;
+}
+
+#colorsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.colorDisplay {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background-color: #ddd;
+    border: 2px solid #000;
+    cursor: pointer;
+    font-weight: bold;
+}

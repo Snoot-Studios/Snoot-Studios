@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Image Processing Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Dynamic Image Processing Tool</h1>
+    <input type="file" id="imageUploader" accept="image/*">
+    <br><br>
+    <canvas id="imageCanvas"></canvas>
+    <div id="imageInfo">Resolution: 0 x 0</div>
+    <br>
+    <label for="resizeSlider">Resize Image:</label>
+    <input type="range" id="resizeSlider" min="5" max="150" value="100">
+    <br>
+    <label for="darkThreshold">Dark Threshold:</label>
+    <input type="range" id="darkThreshold" min="0" max="255" value="85">
+    <input type="text" id="darkColor" placeholder="#000000" class="colorInput">
+    <br>
+    <label for="mediumThreshold">Medium Threshold:</label>
+    <input type="range" id="mediumThreshold" min="0" max="255" value="170">
+    <input type="text" id="mediumColor" placeholder="#808080" class="colorInput">
+    <br>
+    <label for="lightThreshold">Light Threshold:</label>
+    <input type="range" id="lightThreshold" min="0" max="255" value="212">
+    <input type="text" id="lightColor" placeholder="#C0C0C0" class="colorInput">
+    <br>
+    <input type="text" id="fileNameInput" placeholder="Enter filename">
+    <button id="downloadBtn">Download Image</button>
+    
+    <div id="colorHistory">
+        <h2>Color History</h2>
+        <div id="colorsContainer"></div>
+        <button id="clearHistoryBtn">Clear History</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
